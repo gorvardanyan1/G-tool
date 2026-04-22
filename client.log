@@ -1,0 +1,23 @@
+nohup: ignoring input
+
+> toolbox-client@1.0.0 dev
+> vite
+
+
+  VITE v5.4.21  ready in 665 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: use --host to expose
+5:27:35 PM [vite] hmr update /src/pages/Translate.jsx, /src/index.css
+5:27:38 PM [vite] hmr update /src/pages/Ocr.jsx, /src/index.css
+6:40:21 PM [vite] hmr update /src/App.jsx, /src/index.css
+6:40:23 PM [vite] hmr update /src/components/layout/Sidebar.jsx, /src/index.css
+6:40:27 PM [vite] hmr update /src/pages/Translate.jsx, /src/index.css, /src/pages/ImageConverter.jsx, /src/pages/TextTools.jsx, /src/pages/Ocr.jsx, /src/pages/ImageEditor.jsx
+6:40:30 PM [vite] hmr update /src/pages/Home.jsx, /src/index.css
+7:04:08 PM [vite] hmr update /src/pages/ImageEditor.jsx, /src/index.css
+7:13:39 PM [vite] hmr update /src/pages/ImageEditor.jsx, /src/index.css
+7:13:55 PM [vite] hmr update /src/pages/ImageEditor.jsx, /src/index.css
+7:14:32 PM [vite] hmr update /src/pages/ImageEditor.jsx, /src/index.css
+7:14:45 PM [vite] hmr update /src/pages/ImageEditor.jsx, /src/index.css
+7:25:08 PM [vite] hmr update /src/pages/Translate.jsx, /src/index.css, /src/pages/ImageConverter.jsx, /src/pages/TextTools.jsx, /src/pages/Ocr.jsx, /src/pages/ImageEditor.jsx
+7:25:30 PM [vite] hmr update /src/pages/ImageEditor.jsx, /src/index.css

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a1628"/>
+      <stop offset="100%" stop-color="#0d2318"/>
+    </linearGradient>
+    <linearGradient id="glow-g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#10b981"/>
+    </linearGradient>
+    <linearGradient id="glow-w" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+    <filter id="soft-glow-g" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft-glow-o" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="88" fill="url(#bg)"/>
+
+  <!-- Subtle inner border -->
+  <rect x="2" y="2" width="396" height="396" rx="87" fill="none" stroke="#10b981" stroke-width="1.5" stroke-opacity="0.18"/>
+
+  <!-- Top-left corner accent -->
+  <line x1="8" y1="100" x2="8" y2="8" stroke="#10b981" stroke-width="10" stroke-linecap="round" stroke-opacity="0.9"/>
+  <line x1="8" y1="8" x2="100" y2="8" stroke="#10b981" stroke-width="10" stroke-linecap="round" stroke-opacity="0.9"/>
+
+  <!-- Bottom-right corner accent (mirrored, faint) -->
+  <line x1="392" y1="300" x2="392" y2="392" stroke="#fb923c" stroke-width="6" stroke-linecap="round" stroke-opacity="0.35"/>
+  <line x1="392" y1="392" x2="300" y2="392" stroke="#fb923c" stroke-width="6" stroke-linecap="round" stroke-opacity="0.35"/>
+
+  <!-- G letterform — emerald green -->
+  <g filter="url(#soft-glow-g)">
+    <!-- Outer C arc of G -->
+    <path d="M268 118 A108 108 0 1 0 268 282" fill="none" stroke="url(#glow-g)" stroke-width="30" stroke-linecap="round"/>
+    <!-- G crossbar -->
+    <line x1="268" y1="200" x2="188" y2="200" stroke="url(#glow-g)" stroke-width="30" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wrench icon — orange, top-right corner, rotated -->
+  <g filter="url(#soft-glow-o)" transform="translate(278, 82) rotate(42)">
+    <!-- handle body -->
+    <rect x="-11" y="-38" width="22" height="72" rx="11" fill="url(#glow-w)"/>
+    <!-- top ring of wrench head -->
+    <circle cx="0" cy="-38" r="19" fill="none" stroke="url(#glow-w)" stroke-width="10"/>
+    <!-- bottom ring of wrench head -->
+    <circle cx="0" cy="34" r="19" fill="none" stroke="url(#glow-w)" stroke-width="10"/>
+    <!-- inner cut of top ring -->
+    <circle cx="0" cy="-38" r="8" fill="#0a1628"/>
+    <!-- inner cut of bottom ring -->
+    <circle cx="0" cy="34" r="8" fill="#0a1628"/>
+  </g>
+
+  <!-- Accent dots — bottom left -->
+  <circle cx="68" cy="336" r="10" fill="#10b981" opacity="0.55"/>
+  <circle cx="96" cy="336" r="7"  fill="#fb923c" opacity="0.45"/>
+  <circle cx="118" cy="336" r="4.5" fill="#10b981" opacity="0.25"/>
+</svg>
