@@ -8,19 +8,22 @@ const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
+const isVercel = Boolean(process.env.VERCEL);
+
 // In-memory storage for test logs (in production, use a database)
 const testLogs = [];
 const LOG_FILE_PATH = path.join(__dirname, '..', '..', 'logs', 'device-tests.json');
 
 // Ensure logs directory exists
 const logsDir = path.dirname(LOG_FILE_PATH);
-if (!fs.existsSync(logsDir)) {
+if (!isVercel && !fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
 // Load existing logs from file
 const loadLogs = () => {
   try {
+    if (isVercel) return [];
     if (fs.existsSync(LOG_FILE_PATH)) {
       const data = fs.readFileSync(LOG_FILE_PATH, 'utf-8');
       return JSON.parse(data);
@@ -34,6 +37,7 @@ const loadLogs = () => {
 // Save logs to file
 const saveLogs = (logs) => {
   try {
+    if (isVercel) return;
     fs.writeFileSync(LOG_FILE_PATH, JSON.stringify(logs, null, 2));
   } catch (error) {
     console.error('Error saving device test logs:', error);

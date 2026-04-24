@@ -6,6 +6,18 @@ import upload from '../middleware/upload.js';
 
 const router = express.Router();
 
+const getUploadedInput = (file) => {
+  if (!file) return null;
+  if (file.buffer) return file.buffer;
+  if (file.path) return file.path;
+  return null;
+};
+
+const safeUnlink = (filePath) => {
+  if (!filePath) return;
+  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+};
+
 function validateQuality(value) {
   const q = parseInt(value, 10);
   if (Number.isNaN(q)) return 100;
@@ -36,14 +48,22 @@ router.post('/convert', upload.single('image'), async (req, res) => {
     }
 
     const { format = 'png', quality = 100 } = req.body;
-    const inputPath = req.file.path;
+    const input = getUploadedInput(req.file);
     const outputFilename = `converted-${Date.now()}.${format}`;
 
     const inputExt = path.extname(req.file.originalname || '').toLowerCase();
     if (req.file.mimetype === 'image/svg+xml' || inputExt === '.svg') {
-      const svgText = fs.readFileSync(inputPath, 'utf8');
+      if (!req.file.path) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          error: 'SVG upload is not supported in serverless mode'
+        });
+      }
+
+      const svgText = fs.readFileSync(req.file.path, 'utf8');
       if (!validateSvgContent(svgText)) {
-        fs.unlinkSync(inputPath);
+        safeUnlink(req.file.path);
         return res.status(400).json({
           success: false,
           data: null,
@@ -53,14 +73,14 @@ router.post('/convert', upload.single('image'), async (req, res) => {
     }
 
     // Convert image using sharp
-    let pipeline = sharp(inputPath);
+    let pipeline = sharp(input);
 
     const qualityValue = validateQuality(quality);
 
     const allowedFormats = new Set(['jpeg', 'jpg', 'png', 'webp', 'gif', 'svg']);
     const normalizedFormat = String(format).toLowerCase();
     if (!allowedFormats.has(normalizedFormat)) {
-      fs.unlinkSync(inputPath);
+      safeUnlink(req.file.path);
       return res.status(400).json({
         success: false,
         data: null,
@@ -110,7 +130,7 @@ router.post('/convert', upload.single('image'), async (req, res) => {
     const metadata = await sharp(outputBuffer).metadata();
 
     // Clean up original uploaded file
-    fs.unlinkSync(inputPath);
+    safeUnlink(req.file.path);
 
     // Convert to base64 for direct transfer
     const base64Data = outputBuffer.toString('base64');
@@ -132,9 +152,7 @@ router.post('/convert', upload.single('image'), async (req, res) => {
     });
   } catch (error) {
     // Clean up files on error
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
+    safeUnlink(req.file?.path);
 
     res.status(500).json({
       success: false,
@@ -156,15 +174,23 @@ router.post('/resize', upload.single('image'), async (req, res) => {
     }
 
     const { width, height, maintainAspect = 'true' } = req.body;
-    const inputPath = req.file.path;
+    const input = getUploadedInput(req.file);
     const ext = path.extname(req.file.originalname) || '.png';
     const outputFilename = `resized-${Date.now()}${ext}`;
 
     const inputExt = path.extname(req.file.originalname || '').toLowerCase();
     if (req.file.mimetype === 'image/svg+xml' || inputExt === '.svg') {
-      const svgText = fs.readFileSync(inputPath, 'utf8');
+      if (!req.file.path) {
+        return res.status(400).json({
+          success: false,
+          data: null,
+          error: 'SVG upload is not supported in serverless mode'
+        });
+      }
+
+      const svgText = fs.readFileSync(req.file.path, 'utf8');
       if (!validateSvgContent(svgText)) {
-        fs.unlinkSync(inputPath);
+        safeUnlink(req.file.path);
         return res.status(400).json({
           success: false,
           data: null,
@@ -173,7 +199,7 @@ router.post('/resize', upload.single('image'), async (req, res) => {
       }
     }
 
-    let pipeline = sharp(inputPath);
+    let pipeline = sharp(input);
 
     const resizeOptions = {};
     if (width) resizeOptions.width = parseInt(width);
@@ -190,7 +216,7 @@ router.post('/resize', upload.single('image'), async (req, res) => {
     const outputBuffer = await pipeline.toBuffer();
 
     const metadata = await sharp(outputBuffer).metadata();
-    fs.unlinkSync(inputPath);
+    safeUnlink(req.file.path);
 
     // Convert to base64 for direct transfer
     const format = metadata.format || 'png';
@@ -210,9 +236,7 @@ router.post('/resize', upload.single('image'), async (req, res) => {
       error: null
     });
   } catch (error) {
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
-    }
+    safeUnlink(req.file?.path);
 
     res.status(500).json({
       success: false,

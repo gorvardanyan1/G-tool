@@ -19,6 +19,14 @@ router.post('/', upload.single('image'), async (req, res) => {
   const lang = req.body.lang || 'eng';
   const start = Date.now();
 
+  let tempPath = null;
+  if (!req.file.path && req.file.buffer) {
+    tempPath = path.join(process.env.TMPDIR || '/tmp', `ocr-${Date.now()}-${Math.random().toString(16).slice(2)}.png`);
+    await fs.promises.writeFile(tempPath, req.file.buffer);
+  }
+
+  const imagePath = req.file.path || tempPath;
+
   let worker;
   try {
     // Create a fresh Tesseract worker for this request
@@ -27,10 +35,11 @@ router.post('/', upload.single('image'), async (req, res) => {
       errorHandler: () => {},
     });
 
-    const { data } = await worker.recognize(req.file.path);
+    const { data } = await worker.recognize(imagePath);
 
     // Cleanup uploaded file after OCR
-    fs.unlink(req.file.path, () => {});
+    if (req.file.path) fs.unlink(req.file.path, () => {});
+    if (tempPath) fs.unlink(tempPath, () => {});
 
     return res.json({
       success: true,
@@ -46,6 +55,7 @@ router.post('/', upload.single('image'), async (req, res) => {
   } catch (err) {
     // Cleanup on error too
     if (req.file?.path) fs.unlink(req.file.path, () => {});
+    if (tempPath) fs.unlink(tempPath, () => {});
     return res.status(500).json({
       success: false,
       data: null,
