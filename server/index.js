@@ -9,13 +9,20 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables
-const envPath = path.join(__dirname, '..', '.env');
-dotenv.config({ path: envPath });
+const dotenvResult = dotenv.config();
+if (dotenvResult.error) {
+  const envPath = path.join(__dirname, '..', '.env');
+  dotenv.config({ path: envPath });
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const CLIENT_URLS = (process.env.CLIENT_URLS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+const allowedOrigins = Array.from(new Set([CLIENT_URL, ...CLIENT_URLS]));
 
 app.disable('x-powered-by');
 
@@ -26,7 +33,11 @@ if (TRUST_PROXY) {
 
 // Middleware
 app.use(cors({
-  origin: CLIENT_URL,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -63,7 +74,7 @@ app.get('/health', (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ success: false, error: 'Endpoint not found' });
+  res.status(404).json({ success: false, data: null, error: 'Endpoint not found' });
 });
 
 // Error handler
@@ -72,11 +83,12 @@ app.use((err, req, res, next) => {
   const isProd = process.env.NODE_ENV === 'production';
   res.status(500).json({
     success: false,
+    data: null,
     error: isProd ? 'Internal server error' : (err.message || 'Internal server error')
   });
 });
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`CORS enabled for: ${CLIENT_URL}`);
+  console.log(`CORS enabled for: ${allowedOrigins.join(', ')}`);
 });

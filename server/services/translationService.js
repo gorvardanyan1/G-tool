@@ -5,6 +5,7 @@
 
 import { generateContent } from './aiService.js';
 import { prompts } from '../config/prompts.js';
+import { languages } from '../config/languages.js';
 
 /**
  * Translation modes
@@ -31,11 +32,17 @@ export async function translateText(text, sourceLang, targetLang, mode = Transla
     throw new Error('Target language is required');
   }
 
-  // Handle auto-detect for source language
-  const effectiveSourceLang = sourceLang === 'auto' ? 'the detected source language' : sourceLang;
+  const resolveLanguageName = (lang) => {
+    if (!lang) return lang;
+    const found = languages.find((l) => l.code === lang);
+    return found?.name || lang;
+  };
+
+  const targetLangName = resolveLanguageName(targetLang);
+  const sourceLangName = sourceLang === 'auto' ? 'the detected source language' : resolveLanguageName(sourceLang);
 
   // Select prompt based on mode
-  const promptConfig = { text, sourceLang: effectiveSourceLang, targetLang };
+  const promptConfig = { text, sourceLang: sourceLangName, targetLang: targetLangName };
   const prompt = mode === TranslationMode.WORD
     ? prompts.translation.wordMode(promptConfig)
     : prompts.translation.naturalMode(promptConfig);
