@@ -12,6 +12,10 @@ import Code from './pages/Code';
 import DeviceTester from './pages/DeviceTester';
 import DeviceDiagnostics from './pages/DeviceDiagnostics';
 import SqlAi from './pages/SqlAi';
+import QrGenerator from './pages/QrGenerator';
+import ApiTester from './pages/ApiTester';
+import ColorPalette from './pages/ColorPalette';
+import RegexTester from './pages/RegexTester';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -33,6 +37,10 @@ function App() {
               <Route path="/device-tester" element={<DeviceTester />} />
               <Route path="/device-diagnostics" element={<DeviceDiagnostics />} />
               <Route path="/sql-ai" element={<SqlAi />} />
+              <Route path="/api-tester" element={<ApiTester />} />
+              <Route path="/qr" element={<QrGenerator />} />
+              <Route path="/regex" element={<RegexTester />} />
+              <Route path="/color" element={<ColorPalette />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

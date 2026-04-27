@@ -75,3 +75,26 @@ export const imageEditorApi = {
   download: (imageId, format, quality) =>
     api.post('/image-editor/download', { imageId, format, quality })
 };
+
+export const apiTesterApi = {
+  proxy: (url, method, headers, body, bodyType) =>
+    api.post('/api-tester/proxy', { url, method, headers, body, bodyType })
+};
+
+export const colorPaletteApi = {
+  extract: (formData) =>
+    api.post('/color/extract', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    }),
+  generateAi: (description) =>
+    api.post('/color/generate-ai', { description })
+};
+
+export const regexTesterApi = {
+  test: (pattern, flags, text, flavor) =>
+    api.post('/regex/test', { pattern, flags, text, flavor }),
+  generate: (description, flavor) =>
+    api.post('/regex/generate', { description, flavor })
+};

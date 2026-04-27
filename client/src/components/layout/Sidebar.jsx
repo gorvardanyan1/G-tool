@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, Languages, Image as ImageIcon, FileText, Sun, Moon, Settings, Calculator, Grid3X3, Menu, X, GitCompare, Scan, PenTool, Code, Camera, Monitor, Database } from 'lucide-react';
+import { LayoutDashboard, Languages, Image as ImageIcon, FileText, Sun, Moon, Settings, Calculator, Grid3X3, Menu, X, GitCompare, Scan, PenTool, Code, Camera, Monitor, Database, QrCode, Terminal, Palette, Regex } from 'lucide-react';
 import SidebarItem from './SidebarItem';
 import { useTheme } from '../../hooks/useTheme';
 
@@ -43,13 +43,10 @@ export default function Sidebar() {
       <SidebarItem to="/device-diagnostics" icon={Monitor} label="Diagnostics" onClick={() => setIsMobileMenuOpen(false)} />
       <SidebarItem to="/sql-ai" icon={Database} label="SQL AI" onClick={() => setIsMobileMenuOpen(false)} />
       <SidebarItem to="/ocr" icon={Scan} label="OCR" onClick={() => setIsMobileMenuOpen(false)} />
-
-      {/* Placeholder slots for future tools */}
-      <div className="pt-4 border-t border-gray-300 dark:border-gray-700 mt-4 space-y-1">
-        <SidebarItem to="#" icon={Calculator} label="Tool 5" isPlaceholder />
-        <SidebarItem to="#" icon={Settings} label="Tool 6" isPlaceholder />
-        <SidebarItem to="#" icon={Grid3X3} label="Tool 7" isPlaceholder />
-      </div>
+      <SidebarItem to="/qr" icon={QrCode} label="QR Code" onClick={() => setIsMobileMenuOpen(false)} />
+      <SidebarItem to="/api-tester" icon={Terminal} label="API" onClick={() => setIsMobileMenuOpen(false)} />
+      <SidebarItem to="/color" icon={Palette} label="Colors" onClick={() => setIsMobileMenuOpen(false)} />
+      <SidebarItem to="/regex" icon={Regex} label="Regex" onClick={() => setIsMobileMenuOpen(false)} />
     </>
   );
 

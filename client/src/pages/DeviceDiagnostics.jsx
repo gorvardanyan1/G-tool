@@ -666,7 +666,7 @@ export default function DeviceDiagnostics() {
     } else if (permission === 'not_found') {
       return <AlertCircle className="w-5 h-5 text-yellow-500" />;
     }
-    return <AlertCircle className="w-5 h-5 text-gray-400" />;
+    return <AlertCircle className="w-5 h-5 text-gray-400 dark:text-gray-500" />;
   };
 
   const tabs = [
@@ -755,23 +755,23 @@ export default function DeviceDiagnostics() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Browser:</span>
-                    <span className="font-medium">{typeof browserInfo.browser === 'string' ? browserInfo.browser : 'Unknown'}</span>
+                    <span className="font-medium dark:text-gray-100">{typeof browserInfo.browser === 'string' ? browserInfo.browser : 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">CPU Cores:</span>
-                    <span className="font-medium">{typeof browserInfo.cpu === 'string' || typeof browserInfo.cpu === 'number' ? browserInfo.cpu : 'Unknown'}</span>
+                    <span className="font-medium dark:text-gray-100">{typeof browserInfo.cpu === 'string' || typeof browserInfo.cpu === 'number' ? browserInfo.cpu : 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Memory:</span>
-                    <span className="font-medium">{typeof browserInfo.memory === 'string' ? browserInfo.memory : 'Unknown'}</span>
+                    <span className="font-medium dark:text-gray-100">{typeof browserInfo.memory === 'string' ? browserInfo.memory : 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">GPU (estimate):</span>
-                    <span className="font-medium">{gpuRenderer}</span>
+                    <span className="font-medium dark:text-gray-100">{gpuRenderer}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Screen:</span>
-                    <span className="font-medium">
+                    <span className="font-medium dark:text-gray-100">
                       {browserInfo.screen?.width && browserInfo.screen?.height 
                         ? `${browserInfo.screen.width}x${browserInfo.screen.height}` 
                         : 'Unknown'}
@@ -779,27 +779,27 @@ export default function DeviceDiagnostics() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Platform:</span>
-                    <span className="font-medium">{typeof browserInfo.platform === 'string' ? browserInfo.platform : 'Unknown'}</span>
+                    <span className="font-medium dark:text-gray-100">{typeof browserInfo.platform === 'string' ? browserInfo.platform : 'Unknown'}</span>
                   </div>
                   {browserInfo.connection && typeof browserInfo.connection === 'object' && typeof browserInfo.connection.effectiveType === 'string' && (
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Network:</span>
-                      <span className="font-medium">{browserInfo.connection.effectiveType}</span>
+                      <span className="font-medium dark:text-gray-100">{browserInfo.connection.effectiveType}</span>
                     </div>
                   )}
 
                   <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Cameras:</span>
-                      <span className="font-medium">{devices.cameras.length}</span>
+                      <span className="font-medium dark:text-gray-100">{devices.cameras.length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Microphones:</span>
-                      <span className="font-medium">{devices.microphones.length}</span>
+                      <span className="font-medium dark:text-gray-100">{devices.microphones.length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Speakers:</span>
-                      <span className="font-medium">{devices.speakers.length}</span>
+                      <span className="font-medium dark:text-gray-100">{devices.speakers.length}</span>
                     </div>
 
                     {(permissions.camera === 'granted' || permissions.microphone === 'granted') && (
@@ -867,7 +867,7 @@ export default function DeviceDiagnostics() {
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <CameraOff className="w-12 h-12 text-gray-600" />
+                      <CameraOff className="w-12 h-12 text-gray-600 dark:text-gray-400" />
                     </div>
                   )}
                 </div>
@@ -960,7 +960,7 @@ export default function DeviceDiagnostics() {
                         ))}
                       </div>
                     ) : (
-                      <MicOff className="w-8 h-8 text-gray-400" />
+                      <MicOff className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                     )}
                   </div>
                 </div>
@@ -1030,7 +1030,7 @@ export default function DeviceDiagnostics() {
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      <VolumeX className="w-16 h-16 text-gray-400 mx-auto" />
+                      <VolumeX className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto" />
                       <p className="text-gray-600 dark:text-gray-400">
                         Click the button below to test your speakers
                       </p>
@@ -1237,8 +1237,8 @@ export default function DeviceDiagnostics() {
                       <p className="font-medium text-gray-900 dark:text-gray-100">Storage Estimate</p>
                       {storageEstimate?.supported ? (
                         <>
-                          <div>Quota: {storageEstimate.quota ? `${Math.round(storageEstimate.quota / 1024 / 1024)} MB` : 'Unknown'}</div>
-                          <div>Usage: {storageEstimate.usage ? `${Math.round(storageEstimate.usage / 1024 / 1024)} MB` : 'Unknown'}</div>
+                          <div className='dark:text-gray-100'>Quota: {storageEstimate.quota ? `${Math.round(storageEstimate.quota / 1024 / 1024)} MB` : 'Unknown'}</div>
+                          <div className='dark:text-gray-100'>Usage: {storageEstimate.usage ? `${Math.round(storageEstimate.usage / 1024 / 1024)} MB` : 'Unknown'}</div>
                         </>
                       ) : (
                         <div className="text-gray-600 dark:text-gray-400">Unavailable</div>
@@ -1249,9 +1249,9 @@ export default function DeviceDiagnostics() {
                       <p className="font-medium text-gray-900 dark:text-gray-100">WebGL Capabilities</p>
                       {webglCaps?.supported ? (
                         <>
-                          <div>Version: {webglCaps.version}</div>
-                          <div>Max Texture: {webglCaps.maxTextureSize}</div>
-                          <div>Max Renderbuffer: {webglCaps.maxRenderbufferSize}</div>
+                          <div className='dark:text-gray-100'>Version: {webglCaps.version}</div>
+                          <div className='dark:text-gray-100'>Max Texture: {webglCaps.maxTextureSize}</div>
+                          <div className='dark:text-gray-100'>Max Renderbuffer: {webglCaps.maxRenderbufferSize}</div>
                         </>
                       ) : (
                         <div className="text-gray-600 dark:text-gray-400">Unavailable</div>
@@ -1274,9 +1274,9 @@ export default function DeviceDiagnostics() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div className="space-y-1">
                     <p className="font-medium text-gray-900 dark:text-gray-100">Security</p>
-                    <div>Secure Context: {window.isSecureContext ? 'Yes' : 'No'}</div>
-                    <div>Cookies Enabled: {navigator.cookieEnabled ? 'Yes' : 'No'}</div>
-                    <div>
+                    <div className="dark:text-gray-300">Secure Context: {window.isSecureContext ? 'Yes' : 'No'}</div>
+                    <div className="dark:text-gray-300">Cookies Enabled: {navigator.cookieEnabled ? 'Yes' : 'No'}</div>
+                    <div className="dark:text-gray-300">
                       localStorage: {(() => {
                         try {
                           const k = '__test__';
@@ -1294,10 +1294,10 @@ export default function DeviceDiagnostics() {
                     <p className="font-medium text-gray-900 dark:text-gray-100">Permissions</p>
                     {permissionStates?.supported ? (
                       <>
-                        <div>Camera: {permissionStates.camera}</div>
-                        <div>Microphone: {permissionStates.microphone}</div>
-                        <div>Geolocation: {permissionStates.geolocation}</div>
-                        <div>Notifications: {permissionStates.notifications}</div>
+                        <div className="dark:text-gray-300">Camera: {permissionStates.camera}</div>
+                        <div className="dark:text-gray-300">Microphone: {permissionStates.microphone}</div>
+                        <div className="dark:text-gray-300">Geolocation: {permissionStates.geolocation}</div>
+                        <div className="dark:text-gray-300">Notifications: {permissionStates.notifications}</div>
                       </>
                     ) : (
                       <div className="text-gray-600 dark:text-gray-400">Permissions API unavailable</div>
@@ -1319,10 +1319,10 @@ export default function DeviceDiagnostics() {
 
                   {batteryInfo?.supported ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>Level: {typeof batteryInfo.level === 'number' ? `${Math.round(batteryInfo.level * 100)}%` : 'Unknown'}</div>
-                      <div>Charging: {batteryInfo.charging ? 'Yes' : 'No'}</div>
-                      <div>Charging Time: {Number.isFinite(batteryInfo.chargingTime) ? `${Math.round(batteryInfo.chargingTime)}s` : 'Unknown'}</div>
-                      <div>Discharging Time: {Number.isFinite(batteryInfo.dischargingTime) ? `${Math.round(batteryInfo.dischargingTime)}s` : 'Unknown'}</div>
+                      <div className="dark:text-gray-300">Level: {typeof batteryInfo.level === 'number' ? `${Math.round(batteryInfo.level * 100)}%` : 'Unknown'}</div>
+                      <div className="dark:text-gray-300">Charging: {batteryInfo.charging ? 'Yes' : 'No'}</div>
+                      <div className="dark:text-gray-300">Charging Time: {Number.isFinite(batteryInfo.chargingTime) ? `${Math.round(batteryInfo.chargingTime)}s` : 'Unknown'}</div>
+                      <div className="dark:text-gray-300">Discharging Time: {Number.isFinite(batteryInfo.dischargingTime) ? `${Math.round(batteryInfo.dischargingTime)}s` : 'Unknown'}</div>
                     </div>
                   ) : (
                     <p className="text-sm text-gray-600 dark:text-gray-400">Battery API unavailable</p>
@@ -1337,10 +1337,10 @@ export default function DeviceDiagnostics() {
                   </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>Orientation Supported: {sensorInfo.orientationSupported ? 'Yes' : 'No'}</div>
-                    <div>Motion Supported: {sensorInfo.motionSupported ? 'Yes' : 'No'}</div>
-                    <div>Orientation Permission: {sensorInfo.orientationPermission}</div>
-                    <div>Motion Permission: {sensorInfo.motionPermission}</div>
+                    <div className="dark:text-gray-300">Orientation Supported: {sensorInfo.orientationSupported ? 'Yes' : 'No'}</div>
+                    <div className="dark:text-gray-300">Motion Supported: {sensorInfo.motionSupported ? 'Yes' : 'No'}</div>
+                    <div className="dark:text-gray-300">Orientation Permission: {sensorInfo.orientationPermission}</div>
+                    <div className="dark:text-gray-300">Motion Permission: {sensorInfo.motionPermission}</div>
                   </div>
 
                   {(typeof window.DeviceOrientationEvent?.requestPermission === 'function' || typeof window.DeviceMotionEvent?.requestPermission === 'function') && (
