@@ -78,6 +78,53 @@ Provide a concise summary that captures the key points.`
   },
 
   /**
+   * Language detection prompt
+   */
+  languageDetection: {
+    detect: ({ text }) =>
+      `Detect the language of the following text and respond with ONLY the language name (e.g., "English", "Spanish", "Japanese"):
+
+"""${text}"""
+
+Language:`
+  },
+
+  /**
+   * Color palette generation prompt
+   */
+  colorPalette: {
+    generate: ({ description }) =>
+      `Generate a color palette based on this description: "${description}". 
+
+Return ONLY a JSON array of 5-6 hex color codes (e.g., ["#FF5733", "#33FF57", "#3357FF", "#FF33F5", "#F5FF33"]). 
+Choose colors that work well together and match the description.
+
+Return ONLY the JSON array, no other text.`
+  },
+
+  /**
+   * Regex generation prompt
+   */
+  regexGeneration: {
+    generate: ({ description, flavorName }) =>
+      `Generate a ${flavorName} regular expression pattern for the following requirement:
+
+"${description}"
+
+Please provide:
+1. The regex pattern (as a raw string, properly escaped)
+2. Recommended flags (g, i, m, s, u, x - explain which and why)
+3. A clear explanation of how the pattern works, breaking down each part
+
+Format your response as:
+PATTERN: <the pattern>
+FLAGS: <flags>
+EXPLANATION: <detailed explanation>
+
+Make sure the pattern is valid ${flavorName} regex syntax.`
+  },
+
+  /**
    * Image analysis prompts (for future AI image tools)
    */
   imageAnalysis: {
