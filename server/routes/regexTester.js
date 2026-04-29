@@ -1,5 +1,6 @@
 import express from 'express';
 import { generateContent } from '../services/aiService.js';
+import prompts from '../config/prompts.js';
 
 const router = express.Router();
 
@@ -136,21 +137,7 @@ router.post('/generate', async (req, res) => {
 
     const flavorName = flavor === 'php' ? 'PHP (PCRE)' : flavor === 'python' ? 'Python' : 'JavaScript';
 
-    const prompt = `Generate a ${flavorName} regular expression pattern for the following requirement:
-
-"${description}"
-
-Please provide:
-1. The regex pattern (as a raw string, properly escaped)
-2. Recommended flags (g, i, m, s, u, x - explain which and why)
-3. A clear explanation of how the pattern works, breaking down each part
-
-Format your response as:
-PATTERN: <the pattern>
-FLAGS: <flags>
-EXPLANATION: <detailed explanation>
-
-Make sure the pattern is valid ${flavorName} regex syntax.`;
+    const prompt = prompts.regexGeneration.generate({ description, flavorName });
 
     const aiResponse = await generateContent(prompt);
 

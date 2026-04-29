@@ -4,7 +4,7 @@
  */
 
 import { generateContent } from './aiService.js';
-import { prompts } from '../config/prompts.js';
+import prompts from '../config/prompts.js';
 import { languages } from '../config/languages.js';
 
 /**
@@ -98,11 +98,7 @@ export async function batchTranslate(items, sourceLang, mode = TranslationMode.N
  * @returns {Promise<string>} - Detected language name
  */
 export async function detectLanguage(text) {
-  const prompt = `Detect the language of the following text and respond with ONLY the language name (e.g., "English", "Spanish", "Japanese"):
-
-"""${text}"""
-
-Language:`;
+  const prompt = prompts.languageDetection.detect({ text });
 
   try {
     const result = await generateContent(prompt, { temperature: 0.1 });

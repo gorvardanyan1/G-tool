@@ -2,6 +2,7 @@ import express from 'express';
 import sharp from 'sharp';
 import upload from '../middleware/upload.js';
 import { generateContent } from '../services/aiService.js';
+import prompts from '../config/prompts.js';
 
 const router = express.Router();
 
@@ -67,12 +68,7 @@ router.post('/generate-ai', async (req, res) => {
       });
     }
 
-    const prompt = `Generate a color palette based on this description: "${description}". 
-
-Return ONLY a JSON array of 5-6 hex color codes (e.g., ["#FF5733", "#33FF57", "#3357FF", "#FF33F5", "#F5FF33"]). 
-Choose colors that work well together and match the description.
-
-Return ONLY the JSON array, no other text.`;
+    const prompt = prompts.colorPalette.generate({ description });
 
     const aiResponse = await generateContent(prompt);
     

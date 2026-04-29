@@ -20,7 +20,9 @@ import {
   Gauge,
   Shield,
   Battery,
-  Activity
+  Activity,
+  Copy,
+  Download
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -38,6 +40,7 @@ export default function DeviceDiagnostics() {
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const [browserInfo, setBrowserInfo] = useState({});
+  const [uaHints, setUaHints] = useState(null);
   const [gpuRenderer, setGpuRenderer] = useState('Unknown');
   const [isSpeakerTestRunning, setIsSpeakerTestRunning] = useState(false);
   const [monitorColor, setMonitorColor] = useState('black');
@@ -47,6 +50,10 @@ export default function DeviceDiagnostics() {
   const [isPingRunning, setIsPingRunning] = useState(false);
   const [downloadResult, setDownloadResult] = useState(null);
   const [isDownloadRunning, setIsDownloadRunning] = useState(false);
+
+  const [multiPingResults, setMultiPingResults] = useState(null);
+  const [isMultiPingRunning, setIsMultiPingRunning] = useState(false);
+  const [networkEvents, setNetworkEvents] = useState({ lastChangeAt: null, lastState: null });
 
   const [isFpsRunning, setIsFpsRunning] = useState(false);
   const [fps, setFps] = useState(null);
@@ -58,8 +65,19 @@ export default function DeviceDiagnostics() {
   const [cpuBenchmark, setCpuBenchmark] = useState(null);
   const [isCpuBenchmarkRunning, setIsCpuBenchmarkRunning] = useState(false);
 
+  const [cpuBenchmark2, setCpuBenchmark2] = useState(null);
+  const [isCpuBenchmark2Running, setIsCpuBenchmark2Running] = useState(false);
+
+  const [idbBenchmark, setIdbBenchmark] = useState(null);
+  const [isIdbBenchmarkRunning, setIsIdbBenchmarkRunning] = useState(false);
+
   const [storageEstimate, setStorageEstimate] = useState(null);
   const [webglCaps, setWebglCaps] = useState(null);
+
+  const [capabilities, setCapabilities] = useState(null);
+
+  const [diagnosticsReport, setDiagnosticsReport] = useState(null);
+  const [isReportGenerating, setIsReportGenerating] = useState(false);
 
   const [permissionStates, setPermissionStates] = useState(null);
   const [batteryInfo, setBatteryInfo] = useState(null);
@@ -74,6 +92,44 @@ export default function DeviceDiagnostics() {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const animationFrameRef = useRef(null);
+
+  const safeStringify = (value) => {
+    try {
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return '{"error":"Failed to serialize"}';
+    }
+  };
+
+  const downloadTextFile = (filename, text, mime = 'application/json') => {
+    const blob = new Blob([text], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const copyText = async (text) => {
+    if (!text) return;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'fixed';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    el.remove();
+  };
 
   const getWebGLRenderer = () => {
     try {
@@ -158,6 +214,86 @@ export default function DeviceDiagnostics() {
     getBrowserInfo();
     setGpuRenderer(getWebGLRenderer());
     setWebglCaps(getWebGLCapabilities());
+  }, []);
+
+  useEffect(() => {
+    const loadUaHints = async () => {
+      try {
+        if (!navigator.userAgentData?.getHighEntropyValues) {
+          setUaHints({ supported: false });
+          return;
+        }
+
+        const high = await navigator.userAgentData.getHighEntropyValues([
+          'architecture',
+          'model',
+          'platform',
+          'platformVersion',
+          'uaFullVersion'
+        ]);
+
+        setUaHints({
+          supported: true,
+          brands: Array.isArray(navigator.userAgentData.brands) ? navigator.userAgentData.brands : [],
+          mobile: Boolean(navigator.userAgentData.mobile),
+          ...high
+        });
+      } catch {
+        setUaHints({ supported: false });
+      }
+    };
+
+    loadUaHints();
+  }, []);
+
+  useEffect(() => {
+    const computeCapabilities = async () => {
+      const results = {
+        webrtc: typeof window.RTCPeerConnection !== 'undefined',
+        webgpu: typeof navigator.gpu !== 'undefined',
+        clipboard: {
+          supported: Boolean(navigator.clipboard),
+          canWriteText: typeof navigator.clipboard?.writeText === 'function'
+        },
+        indexedDb: typeof window.indexedDB !== 'undefined',
+        mediaCapabilities: typeof navigator.mediaCapabilities !== 'undefined',
+        mediaDevices: Boolean(navigator.mediaDevices),
+        setSinkId: typeof HTMLMediaElement !== 'undefined' && typeof HTMLMediaElement.prototype?.setSinkId === 'function',
+        codecs: {
+          mp4H264: typeof window.MediaSource !== 'undefined' && typeof window.MediaSource.isTypeSupported === 'function'
+            ? window.MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01E"')
+            : 'unavailable',
+          webmVp9: typeof window.MediaSource !== 'undefined' && typeof window.MediaSource.isTypeSupported === 'function'
+            ? window.MediaSource.isTypeSupported('video/webm; codecs="vp09.00.10.08"')
+            : 'unavailable',
+          webmOpus: typeof window.MediaSource !== 'undefined' && typeof window.MediaSource.isTypeSupported === 'function'
+            ? window.MediaSource.isTypeSupported('audio/webm; codecs="opus"')
+            : 'unavailable'
+        }
+      };
+
+      setCapabilities(results);
+    };
+
+    computeCapabilities();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      setNetworkEvents({
+        lastChangeAt: Date.now(),
+        lastState: navigator.onLine ? 'online' : 'offline'
+      });
+    };
+
+    window.addEventListener('online', handler);
+    window.addEventListener('offline', handler);
+    handler();
+
+    return () => {
+      window.removeEventListener('online', handler);
+      window.removeEventListener('offline', handler);
+    };
   }, []);
 
   useEffect(() => {
@@ -415,6 +551,208 @@ export default function DeviceDiagnostics() {
       setCpuBenchmark({ durationMs, iterations, checksum: x });
       setIsCpuBenchmarkRunning(false);
     }, 0);
+  };
+
+  const runCpuBenchmark2 = () => {
+    if (isCpuBenchmark2Running) return;
+
+    setIsCpuBenchmark2Running(true);
+    setCpuBenchmark2(null);
+
+    setTimeout(() => {
+      const durationMs = 350;
+      const start = performance.now();
+      let iterations = 0;
+      let checksum = 0;
+      const buf = new Float64Array(4096);
+      for (let i = 0; i < buf.length; i += 1) buf[i] = (i % 97) * 0.123;
+
+      while (performance.now() - start < durationMs) {
+        for (let i = 1; i < buf.length; i += 1) {
+          buf[i] = (buf[i] * 1.0000001 + buf[i - 1] * 0.9999999) % 1000;
+          checksum += buf[i];
+        }
+        iterations += 1;
+      }
+
+      setCpuBenchmark2({ durationMs, loops: iterations, checksum: Math.round(checksum) });
+      setIsCpuBenchmark2Running(false);
+    }, 0);
+  };
+
+  const runIndexedDbBenchmark = async () => {
+    if (isIdbBenchmarkRunning) return;
+    if (!('indexedDB' in window)) {
+      setIdbBenchmark({ supported: false });
+      return;
+    }
+
+    setIsIdbBenchmarkRunning(true);
+    setIdbBenchmark(null);
+    setError('');
+
+    const dbName = 'gtool_diag_bench';
+    const storeName = 'kv';
+    const key = `k_${Date.now()}`;
+    const payloadBytes = 256 * 1024;
+    const payload = new Uint8Array(payloadBytes);
+    for (let i = 0; i < payload.length; i += 1) payload[i] = i % 251;
+
+    const openDb = () => new Promise((resolve, reject) => {
+      const req = indexedDB.open(dbName, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(storeName)) db.createObjectStore(storeName);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+
+    const txPut = (db) => new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      tx.objectStore(storeName).put(payload, key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    const txGet = (db) => new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readonly');
+      const req = tx.objectStore(storeName).get(key);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+
+    const txDel = (db) => new Promise((resolve, reject) => {
+      const tx = db.transaction(storeName, 'readwrite');
+      tx.objectStore(storeName).delete(key);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+
+    try {
+      const db = await openDb();
+      const writeStart = performance.now();
+      await txPut(db);
+      const writeMs = performance.now() - writeStart;
+
+      const readStart = performance.now();
+      const value = await txGet(db);
+      const readMs = performance.now() - readStart;
+
+      await txDel(db);
+      db.close();
+
+      const bytes = value?.byteLength || value?.length || payloadBytes;
+      setIdbBenchmark({ supported: true, bytes, writeMs, readMs });
+    } catch (e) {
+      setError(`IndexedDB benchmark failed: ${e.message}`);
+      setIdbBenchmark({ supported: false, error: e.message });
+    } finally {
+      setIsIdbBenchmarkRunning(false);
+    }
+  };
+
+  const runMultiPingTest = async () => {
+    if (isMultiPingRunning) return;
+    setIsMultiPingRunning(true);
+    setMultiPingResults(null);
+    setError('');
+
+    const endpoints = [
+      { id: 'api-health', label: 'Backend /api/health', url: '/api/health' },
+      { id: 'root', label: 'Frontend / (same-origin)', url: '/' }
+    ];
+
+    const doSamples = async (url) => {
+      const samples = [];
+      for (let i = 0; i < 5; i += 1) {
+        const start = performance.now();
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 6000);
+        try {
+          await fetch(url, { cache: 'no-store', signal: controller.signal });
+          samples.push(performance.now() - start);
+        } finally {
+          clearTimeout(timeout);
+        }
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
+      const min = Math.min(...samples);
+      const max = Math.max(...samples);
+      const jitter = max - min;
+      return { samples, avg, min, max, jitter };
+    };
+
+    try {
+      const results = {};
+      for (const ep of endpoints) {
+        try {
+          results[ep.id] = { label: ep.label, url: ep.url, ...(await doSamples(ep.url)) };
+        } catch (e) {
+          results[ep.id] = {
+            label: ep.label,
+            url: ep.url,
+            error: e.name === 'AbortError' ? 'timeout' : (e.message || 'failed')
+          };
+        }
+      }
+      setMultiPingResults(results);
+    } catch (e) {
+      setError(`Multi-endpoint ping failed: ${e.message}`);
+    } finally {
+      setIsMultiPingRunning(false);
+    }
+  };
+
+  const buildDiagnosticsReport = async () => {
+    if (isReportGenerating) return;
+    setIsReportGenerating(true);
+    setError('');
+
+    try {
+      const report = {
+        generatedAt: new Date().toISOString(),
+        url: window.location.href,
+        client: {
+          browserInfo,
+          uaHints,
+          gpuRenderer,
+          webglCaps,
+          storageEstimate,
+          permissions,
+          permissionStates,
+          batteryInfo,
+          sensorInfo,
+          capabilities,
+          devicesSummary: {
+            cameras: devices.cameras.length,
+            microphones: devices.microphones.length,
+            speakers: devices.speakers.length
+          }
+        },
+        network: {
+          onLine: navigator.onLine,
+          connection: browserInfo.connection || null,
+          lastEvent: networkEvents,
+          pingResult,
+          downloadResult,
+          multiPingResults
+        },
+        performance: {
+          fps,
+          cpuBenchmark,
+          cpuBenchmark2,
+          idbBenchmark
+        }
+      };
+
+      setDiagnosticsReport(report);
+    } finally {
+      setIsReportGenerating(false);
+    }
   };
 
   const requestSensorPermissions = async () => {
@@ -758,11 +1096,27 @@ export default function DeviceDiagnostics() {
                     <span className="font-medium dark:text-gray-100">{typeof browserInfo.browser === 'string' ? browserInfo.browser : 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">CPU Cores:</span>
-                    <span className="font-medium dark:text-gray-100">{typeof browserInfo.cpu === 'string' || typeof browserInfo.cpu === 'number' ? browserInfo.cpu : 'Unknown'}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Platform:</span>
+                    <span className="font-medium dark:text-gray-100">{typeof browserInfo.platform === 'string' ? browserInfo.platform : 'Unknown'}</span>
+                  </div>
+                  {uaHints?.supported && (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Architecture (UA-CH):</span>
+                        <span className="font-medium dark:text-gray-100">{uaHints.architecture || 'Unknown'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Platform Version (UA-CH):</span>
+                        <span className="font-medium dark:text-gray-100">{uaHints.platformVersion || 'Unknown'}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Language:</span>
+                    <span className="font-medium dark:text-gray-100">{typeof browserInfo.language === 'string' ? browserInfo.language : 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Memory:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Device Memory (estimate):</span>
                     <span className="font-medium dark:text-gray-100">{typeof browserInfo.memory === 'string' ? browserInfo.memory : 'Unknown'}</span>
                   </div>
                   <div className="flex justify-between">
@@ -838,8 +1192,92 @@ export default function DeviceDiagnostics() {
                         </Button>
                       </div>
                     )}
+
+                    <div className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                      Exact CPU model and RAM model are not available to web pages in most browsers for privacy/security reasons.
+                    </div>
                   </div>
                 </div>
+              </Card>
+
+              <Card>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  Export / Share Diagnostics
+                </h3>
+
+                <div className="space-y-3">
+                  <div className="flex flex-wrap gap-3">
+                    <Button onClick={buildDiagnosticsReport} disabled={isReportGenerating}>
+                      {isReportGenerating ? 'Generating...' : 'Generate Report'}
+                    </Button>
+
+                    <Button
+                      variant="secondary"
+                      disabled={!diagnosticsReport}
+                      onClick={async () => {
+                        try {
+                          await copyText(safeStringify(diagnosticsReport));
+                        } catch (e) {
+                          setError(`Copy failed: ${e.message}`);
+                        }
+                      }}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy JSON
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      disabled={!diagnosticsReport}
+                      onClick={() => {
+                        const json = safeStringify(diagnosticsReport);
+                        downloadTextFile(`device-diagnostics-${Date.now()}.json`, json);
+                      }}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Download JSON
+                    </Button>
+                  </div>
+
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    This report is generated in the browser. Tests that require permissions will only run when you click their buttons.
+                  </div>
+
+                  {diagnosticsReport && (
+                    <pre className="text-xs bg-gray-50 dark:bg-gray-900/40 border border-gray-200 dark:border-gray-800 rounded-lg p-3 overflow-auto max-h-64 text-gray-800 dark:text-gray-200">
+                      {safeStringify(diagnosticsReport)}
+                    </pre>
+                  )}
+                </div>
+              </Card>
+
+              <Card>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                  Capabilities
+                </h3>
+                {capabilities ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <div className="dark:text-gray-300">WebRTC: {capabilities.webrtc ? 'Yes' : 'No'}</div>
+                      <div className="dark:text-gray-300">WebGPU: {capabilities.webgpu ? 'Yes' : 'No'}</div>
+                      <div className="dark:text-gray-300">IndexedDB: {capabilities.indexedDb ? 'Yes' : 'No'}</div>
+                      <div className="dark:text-gray-300">MediaDevices: {capabilities.mediaDevices ? 'Yes' : 'No'}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="dark:text-gray-300">Clipboard API: {capabilities.clipboard.supported ? 'Yes' : 'No'}</div>
+                      <div className="dark:text-gray-300">Clipboard writeText: {capabilities.clipboard.canWriteText ? 'Yes' : 'No'}</div>
+                      <div className="dark:text-gray-300">Audio output select (setSinkId): {capabilities.setSinkId ? 'Yes' : 'No'}</div>
+                      <div className="dark:text-gray-300">MediaCapabilities API: {capabilities.mediaCapabilities ? 'Yes' : 'No'}</div>
+                    </div>
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm pt-2 border-t border-gray-200 dark:border-gray-800">
+                      <div className="dark:text-gray-300">Codec MP4/H264: {String(capabilities.codecs.mp4H264)}</div>
+                      <div className="dark:text-gray-300">Codec WebM/VP9: {String(capabilities.codecs.webmVp9)}</div>
+                      <div className="dark:text-gray-300">Codec WebM/Opus: {String(capabilities.codecs.webmOpus)}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Loading...</div>
+                )}
               </Card>
             </div>
           )}
@@ -1152,6 +1590,29 @@ export default function DeviceDiagnostics() {
                   Network Diagnostics
                 </h3>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">Status</p>
+                    <div className="dark:text-gray-300">Online: {navigator.onLine ? 'Yes' : 'No'}</div>
+                    <div className="dark:text-gray-300">Last change: {networkEvents.lastChangeAt ? new Date(networkEvents.lastChangeAt).toLocaleString() : '—'}</div>
+                    <div className="dark:text-gray-300">Last state: {networkEvents.lastState || '—'}</div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">Connection (if supported)</p>
+                    {browserInfo.connection ? (
+                      <>
+                        <div className="dark:text-gray-300">Type: {browserInfo.connection.type || 'Unknown'}</div>
+                        <div className="dark:text-gray-300">Effective: {browserInfo.connection.effectiveType || 'Unknown'}</div>
+                        <div className="dark:text-gray-300">RTT: {typeof browserInfo.connection.rtt === 'number' ? `${browserInfo.connection.rtt} ms` : 'Unknown'}</div>
+                        <div className="dark:text-gray-300">Downlink: {typeof browserInfo.connection.downlink === 'number' ? `${browserInfo.connection.downlink} Mbps` : 'Unknown'}</div>
+                        <div className="dark:text-gray-300">Save-Data: {typeof browserInfo.connection.saveData === 'boolean' ? (browserInfo.connection.saveData ? 'Yes' : 'No') : 'Unknown'}</div>
+                      </>
+                    ) : (
+                      <div className="text-gray-600 dark:text-gray-400">Unavailable</div>
+                    )}
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <p className="text-sm text-gray-600 dark:text-gray-400">Ping (to backend health endpoint)</p>
@@ -1183,6 +1644,40 @@ export default function DeviceDiagnostics() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-800">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Multi-endpoint ping</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Tests backend and same-origin frontend. Public URLs can fail due to CORS.</p>
+                    </div>
+                    <Button onClick={runMultiPingTest} disabled={isMultiPingRunning} variant="outline">
+                      <Activity className="w-4 h-4 mr-2" />
+                      {isMultiPingRunning ? 'Testing...' : 'Run Multi Ping'}
+                    </Button>
+                  </div>
+
+                  {multiPingResults && (
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      {Object.entries(multiPingResults).map(([id, r]) => (
+                        <div key={id} className="border border-gray-200 dark:border-gray-800 rounded-lg p-3">
+                          <div className="font-medium text-gray-900 dark:text-gray-100 truncate">{r.label}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400 truncate">{r.url}</div>
+                          {r.error ? (
+                            <div className="mt-2 text-red-600 dark:text-red-400">Error: {r.error}</div>
+                          ) : (
+                            <div className="mt-2 space-y-1 text-gray-700 dark:text-gray-300">
+                              <div>Avg: {Math.round(r.avg)} ms</div>
+                              <div>Min: {Math.round(r.min)} ms</div>
+                              <div>Max: {Math.round(r.max)} ms</div>
+                              <div>Jitter: {Math.round(r.jitter)} ms</div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </Card>
@@ -1222,7 +1717,51 @@ export default function DeviceDiagnostics() {
                         </div>
                       )}
                     </div>
+
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">CPU Benchmark (arrays + math)</p>
+                      <Button onClick={runCpuBenchmark2} disabled={isCpuBenchmark2Running} variant="outline">
+                        {isCpuBenchmark2Running ? 'Running...' : 'Run Benchmark'}
+                      </Button>
+                      {cpuBenchmark2 && (
+                        <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                          <div>Duration: {cpuBenchmark2.durationMs} ms</div>
+                          <div>Loops: {cpuBenchmark2.loops.toLocaleString()}</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                </div>
+              </Card>
+
+              <Card>
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                    IndexedDB Benchmark
+                  </h3>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button onClick={runIndexedDbBenchmark} disabled={isIdbBenchmarkRunning}>
+                      {isIdbBenchmarkRunning ? 'Running...' : 'Run IndexedDB Test'}
+                    </Button>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      Writes/reads a small payload locally. No network.
+                    </div>
+                  </div>
+
+                  {idbBenchmark && (
+                    <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                      {idbBenchmark.supported ? (
+                        <>
+                          <div>Size: {Math.round(idbBenchmark.bytes / 1024)} KB</div>
+                          <div>Write: {idbBenchmark.writeMs.toFixed(1)} ms</div>
+                          <div>Read: {idbBenchmark.readMs.toFixed(1)} ms</div>
+                        </>
+                      ) : (
+                        <div>IndexedDB unavailable{typeof idbBenchmark.error === 'string' ? `: ${idbBenchmark.error}` : ''}</div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </Card>
 
