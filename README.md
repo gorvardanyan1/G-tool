@@ -1,61 +1,87 @@
-# ToolBox
+# G-tool
 
-A full-stack multi-tool web application with a Canva-style sidebar layout.
+A collection of everyday developer and media tools in one web app: React frontend, Express API, deployed on Vercel.
 
-## Tech Stack
+## Tools
 
-- **Backend**: Express.js (port 5000)
-- **Frontend**: React 18 + Vite + Tailwind CSS v3 + React Router v6
-- **Icons**: lucide-react
-- **HTTP Client**: axios
+| Tool | Route | Runs on |
+|---|---|---|
+| Translate (AI, word or natural mode) | `/translate` | Server (Gemini) |
+| Image Converter (format, quality, resize) | `/image` | Server (sharp) |
+| Image Editor | `/image-editor` | Being rebuilt, see TASKS.md Task 4 |
+| Text Tools (count, transform, base64) | `/text` | Server |
+| Code Diff | `/code-diff` | Browser |
+| Code Tools (encrypt, hash, JWT, JSON, serialize, encode) | `/code` | Server |
+| Device Tester (camera, microphone) | `/device-tester` | Browser |
+| Device Diagnostics (system info, network speed) | `/device-diagnostics` | Browser + `/api/health` |
+| SQL AI (natural language to SQL) | `/sql-ai` | Server (Gemini) |
+| OCR (text from images) | `/ocr` | Server (tesseract.js) |
+| QR Code Generator | `/qr` | Browser |
+| API Tester | `/api-tester` | Server proxy |
+| Color Palette (pick from image, AI palette) | `/color` | Server (sharp, Gemini) |
+| Regex Tester (test, AI generate) | `/regex` | Server (Gemini) |
 
-## Quick Start
+## Tech stack
+
+- **Client:** React 18, Vite 5, Tailwind CSS 3, React Router 6, lucide-react, axios
+- **Server:** Express 4 (ESM), sharp, tesseract.js, multer, helmet, express-rate-limit
+- **AI:** Google Gemini API
+- **Hosting:** Vercel (static SPA + one serverless function at `api/index.js`)
+
+## Local setup
+
+Requires Node.js 20+.
 
 ```bash
-# Install dependencies for all packages
-npm run install:all
-
-# Start both server and client
-npm run dev
+npm run install:all     # installs root, server and client dependencies
+cp .env.example .env    # then fill in GEMINI_API_KEY
+npm run dev             # API on http://localhost:5000, app on http://localhost:5173
 ```
 
-The app will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
+Vite proxies `/api` to the local server, so the client always calls relative `/api/...` URLs.
 
-## Project Structure
+## Environment variables
 
-```
-toolbox/
-├── server/          # Express backend
-│   ├── routes/      # API routes
-│   └── middleware/  # File upload, etc.
-├── client/          # React frontend
-│   ├── src/components/
-│   ├── src/pages/
-│   └── src/context/
-└── uploads/         # File uploads (gitignored)
-```
+See [.env.example](.env.example) for the full list.
 
-## Available Tools
+| Name | Required | Purpose |
+|---|---|---|
+| `GEMINI_API_KEY` | Yes, for AI tools | Google Gemini API key |
+| `GEMINI_MODEL` | No | Default `gemini-2.5-flash` |
+| `GEMINI_FALLBACK_MODEL` | No | Model to try when the main one is overloaded |
+| `CLIENT_URL`, `CLIENT_URLS` | No | Allowed CORS origins |
+| `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | No | API rate limit (default 120 requests per minute) |
+| `TRUST_PROXY` | On Vercel | Set to `1` so rate limiting uses the real client IP |
 
-1. **Translate** - Text translation service
-2. **Image Converter** - Convert images between formats
-3. **Text Tools** - Text manipulation utilities
+Never commit `.env`. Keys belong only in your local `.env` and in Vercel's environment variables.
 
-## Adding New Tools
+## Deploy to Vercel
 
-1. Add sidebar item in `client/src/components/layout/Sidebar.jsx`
-2. Create route handler in `server/routes/[tool].js`
-3. Create page component in `client/src/pages/[ToolName].jsx`
-4. Add route in `client/src/App.jsx`
-5. Update `client/src/pages/Home.jsx` with tool card
+1. Import the GitHub repo into Vercel (framework preset: **Other**).
+2. Add the environment variables above in **Project Settings → Environment Variables**.
+3. Deploy. Vercel runs `vercel-build` (builds `client/`) and serves `api/index.js` as the API function.
 
-## Environment Variables
+Vercel Free (Hobby) limits apply: request bodies up to 4.5 MB, no persistent disk, and no server state between requests. See [.claude/rules/vercel.md](.claude/rules/vercel.md). Hardening the deploy config is Task 2 in [TASKS.md](TASKS.md).
 
-Create a `.env` file in the root:
+## Project structure
 
 ```
-PORT=5000
-CLIENT_URL=http://localhost:5173
+api/index.js           Vercel function entry (re-exports server/app.js)
+server/app.js          Express app (CORS, helmet, rate limit, routes, errors)
+server/routes/         One file per tool, mounted in routes/index.js
+server/services/       Gemini AI service, translation service
+server/config/         AI prompts, language list
+client/src/pages/      One page per tool
+client/src/components/ Layout (sidebar) and shared UI
+client/src/utils/api.js  API client helpers
 ```
+
+## Adding a tool
+
+1. Add the server route in `server/routes/<tool>.js` and mount it in `server/routes/index.js` (skip this if the tool runs in the browser).
+2. Add an API helper in `client/src/utils/api.js`.
+3. Add the page in `client/src/pages/`, the route in `App.jsx`, the sidebar entry and a Home card.
+
+## Roadmap
+
+See [TASKS.md](TASKS.md) for the phased work plan.

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev)",
+      "Bash(npm run install:all)",
+      "Bash(npm --prefix client run build)",
+      "Bash(npm --prefix client run lint)",
+      "Bash(npm --prefix server test)",
+      "Bash(npm test)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.production)",
+      "Read(./server/.env)"
+    ]
+  }
+}
