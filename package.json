@@ -1,14 +1,21 @@
 {
-  "name": "toolbox",
+  "name": "g-tool",
   "version": "1.0.0",
-  "description": "Multi-tool web application with Express backend and React frontend",
+  "private": true,
+  "description": "G-tool: multi-tool web app with Express API and React frontend",
+  "type": "module",
   "main": "server/index.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && npm run dev",
-    "client": "cd client && npm run dev",
+    "dev": "concurrently -n server,client -c blue,magenta \"npm run server\" \"npm run client\"",
+    "server": "node --watch server/index.js",
+    "start": "node server/index.js",
+    "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
     "vercel-build": "npm --prefix client run build",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install:all": "npm install && npm --prefix client install"
   },
   "keywords": [
     "toolbox",
@@ -19,9 +26,6 @@
   ],
   "author": "",
   "license": "MIT",
-  "devDependencies": {
-    "concurrently": "^8.2.2"
-  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
@@ -35,10 +39,12 @@
     "jsonwebtoken": "^9.0.3",
     "msgpack-lite": "^0.1.26",
     "multer": "^1.4.5-lts.1",
-    "qrcode": "^1.5.4",
     "sharp": "^0.33.1",
     "systeminformation": "^5.31.5",
     "tesseract.js": "^5.0.4",
     "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
   }
 }

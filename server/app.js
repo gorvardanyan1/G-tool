@@ -9,28 +9,57 @@ const app = express();
 
 app.disable('x-powered-by');
 
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-const CLIENT_URLS = (process.env.CLIENT_URLS || '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
-const allowedOrigins = Array.from(new Set([CLIENT_URL, ...CLIENT_URLS]));
+const isVercel = Boolean(process.env.VERCEL);
 
-const TRUST_PROXY = process.env.TRUST_PROXY;
+// Trust the first proxy hop on Vercel so req.ip (and rate limiting) sees the real client IP.
+const TRUST_PROXY = process.env.TRUST_PROXY || (isVercel ? '1' : '');
 if (TRUST_PROXY) {
-  app.set('trust proxy', TRUST_PROXY);
+  app.set('trust proxy', /^\d+$/.test(TRUST_PROXY) ? Number(TRUST_PROXY) : TRUST_PROXY);
 }
 
+// Allowed origins: CLIENT_URL, CLIENT_URLS (comma-separated, "*" wildcards allowed,
+// e.g. https://g-tool-*.vercel.app) and this deployment's own Vercel URLs.
+const escapeRegex = (s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&');
+const toOriginMatcher = (pattern) =>
+  new RegExp(`^${pattern.split('*').map(escapeRegex).join('[a-z0-9-]+')}$`, 'i');
+
+const vercelOrigins = [
+  process.env.VERCEL_URL,
+  process.env.VERCEL_BRANCH_URL,
+  process.env.VERCEL_PROJECT_PRODUCTION_URL
+]
+  .filter(Boolean)
+  .map((host) => `https://${host}`);
+
+const originPatterns = [
+  process.env.CLIENT_URL || 'http://localhost:5173',
+  ...(process.env.CLIENT_URLS || '').split(','),
+  ...vercelOrigins
+]
+  .map((s) => s.trim().replace(/\/+$/, ''))
+  .filter(Boolean);
+const originMatchers = Array.from(new Set(originPatterns)).map(toOriginMatcher);
+
+const isSameOrigin = (req, origin) => {
+  try {
+    return new URL(origin).host === req.get('host');
+  } catch {
+    return false;
+  }
+};
+
 app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'));
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+  cors((req, callback) => {
+    const origin = req.get('origin');
+    const allowed =
+      !origin || isSameOrigin(req, origin) || originMatchers.some((re) => re.test(origin));
+    // A rejected origin gets no CORS headers (the browser blocks it), not a 500.
+    callback(null, {
+      origin: allowed,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    });
   })
 );
 

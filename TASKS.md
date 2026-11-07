@@ -21,13 +21,13 @@ The Gemini API key was committed in git history (commit `e972ca4` shows `.env` w
 
 ### Task 2. Fix the Vercel deployment config
 Right now `vercel.json` only has rewrites, and the SPA rewrite points at `/client/dist/index.html`, which is not how Vercel serves build output.
-- [ ] Set `buildCommand` (`npm --prefix client run build`), `outputDirectory` (`client/dist`) and `installCommand` in `vercel.json`.
-- [ ] Rewrites: `/api/(.*)` to the function, and everything else that is not a file to `/index.html` (SPA fallback).
-- [ ] Add `functions["api/index.js"]` with `maxDuration` and `memory` set within Hobby limits, and `includeFiles` only if a data file is truly needed.
-- [ ] Make root `package.json` the single source of server deps (Vercel installs from the root). Remove deps nobody uses, and remove `systeminformation` if Task 6 drops the server diagnostics.
-- [ ] Set `engines.node` (20.x) and `"type": "module"` where needed so `api/index.js` imports `server/app.js` cleanly.
-- [ ] CORS: allow same-origin and `*.vercel.app` preview URLs through `CLIENT_URLS`; do not throw a 500 for a rejected origin.
-- [ ] Use `TRUST_PROXY=1` on Vercel so rate limiting sees the real client IP.
+- [x] Set `buildCommand` (`npm --prefix client run build`), `outputDirectory` (`client/dist`) and `installCommand` in `vercel.json`.
+- [x] Rewrites: `/api/(.*)` to the function, and everything else that is not a file to `/index.html` (SPA fallback).
+- [x] Add `functions["api/index.js"]` with `maxDuration` 60 s (`memory` is not configurable on Hobby; no `includeFiles` needed since OCR moves to the browser in Task 5).
+- [x] Make root `package.json` the single source of server deps (Vercel installs from the root). Remove deps nobody uses (`qrcode` removed). `systeminformation` stays until Task 6 drops the server diagnostics.
+- [x] Set `engines.node` (22.x; 20.x is end-of-life) and `"type": "module"` where needed so `api/index.js` imports `server/app.js` cleanly.
+- [x] CORS: allow same-origin and `*.vercel.app` preview URLs through `CLIENT_URLS`; do not throw a 500 for a rejected origin.
+- [x] Use `TRUST_PROXY=1` on Vercel so rate limiting sees the real client IP.
 
 **Done when:** `vercel deploy` (preview) builds, `/` loads, a deep link like `/regex` loads after refresh, and `/api/health` returns `{ success: true }`.
 
@@ -114,7 +114,7 @@ Two bugs: `routes/imageEditor.js` is **never mounted** in `routes/index.js`, so 
 | # | Task | Phase | Status |
 |---|------|-------|--------|
 | 1 | Security cleanup and repo hygiene | 1 | ◐ (key rotation pending) |
-| 2 | Vercel deployment config | 1 | ☐ |
+| 2 | Vercel deployment config | 1 | ◐ (needs a real preview deploy check) |
 | 3 | Shared server foundation | 1 | ☐ |
 | 4 | Stateless Image Editor | 1 | ☐ |
 | 5 | OCR, Converter, Color on Vercel | 1 | ☐ |

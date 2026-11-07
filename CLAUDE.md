@@ -8,14 +8,15 @@ The work plan lives in [TASKS.md](TASKS.md). Read it before starting any task, a
 - **Client** (`client/`): React 18, Vite 5, Tailwind CSS 3 (`darkMode: 'class'`), React Router 6, lucide-react, axios.
 - **Server** (`server/`): Express 4, ESM (`"type": "module"`), sharp, tesseract.js, multer, helmet, express-rate-limit.
 - **AI**: Google Gemini via `server/services/aiService.js` (`GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL`).
-- **Vercel entry**: `api/index.js` re-exports `server/app.js` as one serverless function. `vercel.json` rewrites `/api/*` to it and everything else to the SPA.
+- **Vercel entry**: `api/index.js` re-exports `server/app.js` as one serverless function. `vercel.json` sets install/build/output (`client/dist`), rewrites `/api/*` to the function and everything else to `/index.html`.
+- **Dependencies**: all server deps live in the **root** `package.json` (Vercel installs from the root). `server/package.json` only sets `"type": "module"`; do not add deps there. Node 22.x.
 
 ## Commands
 
 ```bash
-npm run install:all      # install root + server + client deps
-npm run dev              # server :5000 + client :5173 (Vite proxies /api to :5000)
-npm --prefix client run build   # production build -> client/dist (same as vercel-build)
+npm run install:all      # install root (server) + client deps
+npm run dev              # server :5000 (node --watch) + client :5173 (Vite proxies /api to :5000)
+npm run build            # production client build -> client/dist (what Vercel runs)
 ```
 
 No test or lint setup exists yet (TASKS.md, Task 10 adds it). Until then, verify every change with `npm --prefix client run build` and by running the affected tool in the browser.

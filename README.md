@@ -30,10 +30,10 @@ A collection of everyday developer and media tools in one web app: React fronten
 
 ## Local setup
 
-Requires Node.js 20+.
+Requires Node.js 22.
 
 ```bash
-npm run install:all     # installs root, server and client dependencies
+npm run install:all     # installs root (server) and client dependencies
 cp .env.example .env    # then fill in GEMINI_API_KEY
 npm run dev             # API on http://localhost:5000, app on http://localhost:5173
 ```
@@ -49,24 +49,28 @@ See [.env.example](.env.example) for the full list.
 | `GEMINI_API_KEY` | Yes, for AI tools | Google Gemini API key |
 | `GEMINI_MODEL` | No | Default `gemini-2.5-flash` |
 | `GEMINI_FALLBACK_MODEL` | No | Model to try when the main one is overloaded |
-| `CLIENT_URL`, `CLIENT_URLS` | No | Allowed CORS origins |
+| `CLIENT_URL`, `CLIENT_URLS` | No | Extra allowed CORS origins (`*` wildcard allowed, e.g. `https://g-tool-*.vercel.app`). Same-origin is always allowed. |
 | `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | No | API rate limit (default 120 requests per minute) |
-| `TRUST_PROXY` | On Vercel | Set to `1` so rate limiting uses the real client IP |
+| `TRUST_PROXY` | No | Proxy hops to trust for the client IP. Defaults to `1` on Vercel |
 
 Never commit `.env`. Keys belong only in your local `.env` and in Vercel's environment variables.
 
 ## Deploy to Vercel
 
-1. Import the GitHub repo into Vercel (framework preset: **Other**).
-2. Add the environment variables above in **Project Settings → Environment Variables**.
-3. Deploy. Vercel runs `vercel-build` (builds `client/`) and serves `api/index.js` as the API function.
+1. Import the GitHub repo into Vercel. Leave the framework preset, build and output settings on their defaults: `vercel.json` sets them.
+2. In **Project Settings → General**, set Node.js version to **22.x** (also pinned in `package.json` `engines`).
+3. Add `GEMINI_API_KEY` (and any other variables above) in **Project Settings → Environment Variables**.
+4. Deploy, then check: `/` loads, a deep link such as `/regex` loads after a refresh, and `/api/health` returns `{"success":true,...}`.
 
-Vercel Free (Hobby) limits apply: request bodies up to 4.5 MB, no persistent disk, and no server state between requests. See [.claude/rules/vercel.md](.claude/rules/vercel.md). Hardening the deploy config is Task 2 in [TASKS.md](TASKS.md).
+How it is wired (`vercel.json`): `installCommand` installs root and client deps, `buildCommand` builds `client/` into `client/dist` (served as static files), `/api/*` is rewritten to the `api/index.js` function (the Express app, `maxDuration` 60 s), and every other path falls back to `index.html` for client-side routing.
+
+Vercel Free (Hobby) limits apply: request bodies up to 4.5 MB, no persistent disk, and no server state between requests. See [.claude/rules/vercel.md](.claude/rules/vercel.md). 
 
 ## Project structure
 
 ```
 api/index.js           Vercel function entry (re-exports server/app.js)
+package.json           Server dependencies and all scripts (single source for Vercel)
 server/app.js          Express app (CORS, helmet, rate limit, routes, errors)
 server/routes/         One file per tool, mounted in routes/index.js
 server/services/       Gemini AI service, translation service
