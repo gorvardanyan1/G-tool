@@ -22,7 +22,7 @@ export async function generateContent(prompt, options = {}) {
     throw new Error('GEMINI_API_KEY is not configured in environment variables');
   }
 
-  const buildUrl = (m) => `${baseUrl}/${m}:generateContent?key=${apiKey}`;
+  const buildUrl = (m) => `${baseUrl}/${m}:generateContent`;
 
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -43,7 +43,8 @@ export async function generateContent(prompt, options = {}) {
         const response = await fetch(url, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
           },
           body: JSON.stringify({
             contents: [{ parts: [{ text: prompt }] }],
@@ -161,12 +162,13 @@ export async function streamContent(prompt, options = {}) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  const url = `${baseUrl}/${model}:streamGenerateContent?key=${apiKey}`;
+  const url = `${baseUrl}/${model}:streamGenerateContent`;
 
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey
     },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
